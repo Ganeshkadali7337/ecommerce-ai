@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    watch: { usePolling: true },
     proxy: {
       '/api': 'http://backend:5000',
     },
