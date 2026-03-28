@@ -33,32 +33,6 @@ router.get('/', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/orders/{id}:
- *   get:
- *     tags: [Orders]
- *     summary: Get single order
- *     security:
- *       - bearerAuth: []
- */
-router.get('/:id', auth, async (req, res) => {
-  try {
-    const order = await prisma.order.findFirst({
-      where: { id: req.params.id, userId: req.user.id },
-      include: {
-        items: { include: { product: true } },
-        payment: true,
-        user: { select: { name: true, email: true } },
-      },
-    });
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    res.json(order);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/**
- * @swagger
  * /api/orders/checkout:
  *   post:
  *     tags: [Orders]
@@ -117,12 +91,99 @@ router.post('/checkout', auth, async (req, res) => {
 
 /**
  * @swagger
+ * /api/orders/also-bought/{productId}:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get "customers also bought" recommendations
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema: { type: string }
+ */
+router.get('/also-bought/:productId', async (req, res) => {
+  try {
+    const orders = await prisma.orderItem.findMany({
+      where: { productId: req.params.productId },
+      select: { orderId: true },
+      take: 50,
+    });
+
+    const orderIds = orders.map(o => o.orderId);
+    if (orderIds.length === 0) return res.json([]);
+
+    const coItems = await prisma.orderItem.findMany({
+      where: { orderId: { in: orderIds }, productId: { not: req.params.productId } },
+      select: { productId: true },
+    });
+
+    const counts = {};
+    for (const item of coItems) {
+      counts[item.productId] = (counts[item.productId] || 0) + 1;
+    }
+
+    const topIds = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([id]) => id);
+
+    if (topIds.length === 0) return res.json([]);
+
+    const products = await prisma.product.findMany({
+      where: { id: { in: topIds } },
+      include: { category: true },
+    });
+
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/orders/{id}:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get single order
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ */
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const order = await prisma.order.findFirst({
+      where: { id: req.params.id, userId: req.user.id },
+      include: {
+        items: { include: { product: true } },
+        payment: true,
+        user: { select: { name: true, email: true } },
+      },
+    });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * @swagger
  * /api/orders/{id}/confirm:
  *   post:
  *     tags: [Orders]
  *     summary: Confirm payment and finalize order
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
  */
 router.post('/:id/confirm', auth, async (req, res) => {
   try {

@@ -23,7 +23,7 @@ export default function ChatWidget() {
     setLoading(true);
     try {
       const res = await api.post('/api/ai/chat', { message: msg });
-      setMessages(prev => [...prev, { role: 'ai', text: res.data.reply }]);
+      setMessages(prev => [...prev, { role: 'ai', text: res.data.reply, cost: res.data.cost, tokens: res.data.tokensUsed }]);
     } catch {
       setMessages(prev => [...prev, { role: 'ai', text: 'Sorry, something went wrong. Try again.' }]);
     }
@@ -40,16 +40,21 @@ export default function ChatWidget() {
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {messages.map((m, i) => (
-              <div key={i} style={{
-                alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                background: m.role === 'user' ? '#000' : '#f5f5f5',
-                color: m.role === 'user' ? '#fff' : '#000',
-                padding: '8px 12px',
-                fontSize: '13px',
-                lineHeight: '1.5',
-                maxWidth: '85%',
-              }}>
-                {m.text}
+              <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                <div style={{
+                  background: m.role === 'user' ? '#000' : '#f5f5f5',
+                  color: m.role === 'user' ? '#fff' : '#000',
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  lineHeight: '1.5',
+                }}>
+                  {m.text}
+                </div>
+                {m.cost !== undefined && (
+                  <div style={{ fontSize: '10px', color: '#9e9e9e', marginTop: '2px' }}>
+                    {m.tokens} tokens · ${m.cost.toFixed(6)}
+                  </div>
+                )}
               </div>
             ))}
             {loading && (

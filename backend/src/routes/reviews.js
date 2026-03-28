@@ -45,6 +45,22 @@ router.get('/:productId', async (req, res) => {
  *     summary: Add a review
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [rating, body]
+ *             properties:
+ *               rating: { type: integer, example: 5 }
+ *               title: { type: string, example: "Great product" }
+ *               body: { type: string, example: "Really happy with this purchase." }
  */
 router.post('/:productId', auth, async (req, res) => {
   try {
@@ -92,9 +108,15 @@ router.get('/:productId/summary', async (req, res) => {
     );
 
     const summary = result.response.text();
-    const cost = 0;
+    const usage = result.response.usageMetadata || {};
+    const inputTokens = usage.promptTokenCount || 0;
+    const outputTokens = usage.candidatesTokenCount || 0;
+    const cost = parseFloat(((inputTokens * 0.000000075) + (outputTokens * 0.0000003)).toFixed(6));
 
-    res.json({ summary, cost: parseFloat(cost.toFixed(6)) });
+    const AiLog = require('../models/AiLog');
+    AiLog.create({ type: 'summary', prompt: reviewText.slice(0, 200), response: summary, model: 'gemini-2.5-flash', tokensUsed: inputTokens + outputTokens, cost }).catch(() => {});
+
+    res.json({ summary, cost, tokensUsed: inputTokens + outputTokens });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -106,6 +128,18 @@ router.get('/:productId/summary', async (req, res) => {
  *   post:
  *     tags: [Reviews]
  *     summary: Log user activity
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               type: { type: string, example: "view" }
+ *               productId: { type: string, example: "paste-product-id-here" }
+ *               query: { type: string, example: "hoodies" }
  */
 router.post('/activity/log', auth, async (req, res) => {
   try {

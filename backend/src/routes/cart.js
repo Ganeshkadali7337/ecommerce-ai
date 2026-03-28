@@ -53,6 +53,16 @@ router.get('/', auth, async (req, res) => {
  *     summary: Add item to cart
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [productId]
+ *             properties:
+ *               productId: { type: string, example: "paste-product-id-here" }
+ *               quantity: { type: integer, example: 1 }
  */
 router.post('/', auth, async (req, res) => {
   try {
@@ -86,6 +96,19 @@ router.post('/', auth, async (req, res) => {
  *     summary: Update item quantity
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               quantity: { type: integer, example: 2 }
  */
 router.put('/:productId', auth, async (req, res) => {
   try {
@@ -115,6 +138,11 @@ router.put('/:productId', auth, async (req, res) => {
  *     summary: Remove item from cart
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema: { type: string }
  */
 router.delete('/:productId', auth, async (req, res) => {
   try {
