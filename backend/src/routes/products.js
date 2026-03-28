@@ -3,6 +3,7 @@ const { prisma, minioClient, esClient } = require('../config/db');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
+const ActivityLog = require('../models/ActivityLog');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -68,6 +69,16 @@ router.get('/:id', async (req, res) => {
       include: { category: true, variants: true },
     });
     if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      const jwt = require('jsonwebtoken');
+      try {
+        const user = jwt.verify(token, process.env.JWT_SECRET);
+        ActivityLog.create({ userId: user.id, type: 'view', productId: product.id }).catch(() => {});
+      } catch {}
+    }
+
     res.json(product);
   } catch (err) {
     res.status(500).json({ error: err.message });

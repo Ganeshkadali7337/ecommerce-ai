@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import Reviews from '../components/Reviews';
 
 const s = {
   layout: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px' },
@@ -45,7 +46,7 @@ export default function ProductDetail() {
   if (!product) return <div>Loading...</div>;
 
   return (
-    <div style={s.layout}>
+    <div style={{ ...s.layout, gridTemplateColumns: '1fr 1fr', flexWrap: 'wrap' }}>
       <div style={s.imgBox}>
         {product.imageUrl
           ? <img src={product.imageUrl} alt={product.name} style={s.img} />
@@ -98,6 +99,9 @@ export default function ProductDetail() {
         )}
 
         {msg && <div style={s.msg}>{msg}</div>}
+      </div>
+      <div style={{ gridColumn: '1 / -1' }}>
+        <Reviews productId={id} />
       </div>
     </div>
   );
