@@ -4,6 +4,7 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Reviews from '../components/Reviews';
 import SimilarProducts from '../components/SimilarProducts';
+import AlsoBought from '../components/AlsoBought';
 import Spinner from '../components/Spinner';
 
 export default function ProductDetail() {
@@ -94,6 +95,7 @@ export default function ProductDetail() {
       </div>
 
       <SimilarProducts productId={id} />
+      <AlsoBought productId={id} />
       <Reviews productId={id} />
     </div>
   );
