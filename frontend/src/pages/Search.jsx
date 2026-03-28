@@ -35,11 +35,11 @@ export default function Search() {
       <h1 style={{ marginBottom: '8px' }}>Search Results</h1>
       {q && <p style={{ color: '#616161', marginBottom: '24px' }}>Showing results for "<strong>{q}</strong>"</p>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '32px' }}>
-        <aside>
-          <div style={{ fontWeight: 600, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>Filters</div>
+      <div className="search-layout">
+        <aside className="search-filters">
+          <div style={{ fontWeight: 600, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filters</div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div>
             <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Min Price</div>
             <input
               type="number" placeholder="0"
@@ -49,7 +49,7 @@ export default function Search() {
             />
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div>
             <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Max Price</div>
             <input
               type="number" placeholder="999"
@@ -59,7 +59,7 @@ export default function Search() {
             />
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div>
             <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Min Rating</div>
             <select
               style={{ border: '1px solid #e0e0e0', padding: '7px 10px', width: '100%', background: '#fff' }}
