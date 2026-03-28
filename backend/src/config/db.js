@@ -8,7 +8,11 @@ const Minio = require('minio');
 const prisma = new PrismaClient();
 
 async function connectMongo() {
-  await mongoose.connect(process.env.MONGO_URL);
+  if (mongoose.connection.readyState >= 1) return;
+  await mongoose.connect(process.env.MONGO_URL, {
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 30000,
+  });
   console.log('MongoDB connected');
 }
 
