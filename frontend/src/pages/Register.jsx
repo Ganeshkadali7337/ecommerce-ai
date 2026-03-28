@@ -19,15 +19,19 @@ export default function Register() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       await register(form.name, form.email, form.password);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -48,7 +52,7 @@ export default function Register() {
             />
           </div>
         ))}
-        <button type="submit" style={s.btn}>Register</button>
+        <button type="submit" disabled={loading} style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}>{loading ? 'Creating account...' : 'Register'}</button>
         <p style={s.link}>Have an account? <Link to="/login">Login</Link></p>
       </form>
     </div>

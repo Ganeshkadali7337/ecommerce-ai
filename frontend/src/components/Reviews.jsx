@@ -14,10 +14,14 @@ export default function Reviews({ productId }) {
   const [form, setForm] = useState({ rating: 5, title: '', body: '' });
   const [images, setImages] = useState([]);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState('');
 
   async function load() {
-    const r = await api.get(`/api/reviews/${productId}`);
-    setData(r.data);
+    try {
+      const r = await api.get(`/api/reviews/${productId}`);
+      setData(r.data);
+    } catch {}
   }
 
   useEffect(() => { load(); }, [productId]);
@@ -35,17 +39,25 @@ export default function Reviews({ productId }) {
 
   async function submitReview(e) {
     e.preventDefault();
-    const fd = new FormData();
-    fd.append('rating', form.rating);
-    fd.append('title', form.title);
-    fd.append('body', form.body);
-    fd.append('userName', user.name);
-    images.forEach(f => fd.append('images', f));
-    await api.post(`/api/reviews/${productId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-    setSubmitted(true);
-    setForm({ rating: 5, title: '', body: '' });
-    setImages([]);
-    load();
+    setSubmitting(true);
+    setReviewError('');
+    try {
+      const fd = new FormData();
+      fd.append('rating', form.rating);
+      fd.append('title', form.title);
+      fd.append('body', form.body);
+      fd.append('userName', user.name);
+      images.forEach(f => fd.append('images', f));
+      await api.post(`/api/reviews/${productId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setSubmitted(true);
+      setForm({ rating: 5, title: '', body: '' });
+      setImages([]);
+      load();
+    } catch (err) {
+      setReviewError(err.response?.data?.error || 'Failed to submit review. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -135,8 +147,9 @@ export default function Reviews({ productId }) {
               style={{ fontSize: '13px' }}
             />
           </div>
-          <button type="submit" style={{ background: '#000', color: '#fff', border: 'none', padding: '10px 24px', fontWeight: 600, cursor: 'pointer' }}>
-            Submit
+          {reviewError && <div style={{ color: '#000', border: '1px solid #000', padding: '10px', fontSize: '13px', marginBottom: '12px' }}>{reviewError}</div>}
+          <button type="submit" disabled={submitting} style={{ background: '#000', color: '#fff', border: 'none', padding: '10px 24px', fontWeight: 600, cursor: 'pointer', opacity: submitting ? 0.7 : 1 }}>
+            {submitting ? 'Submitting...' : 'Submit Review'}
           </button>
         </form>
       )}

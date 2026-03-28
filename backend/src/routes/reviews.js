@@ -5,6 +5,7 @@ const ActivityLog = require('../models/ActivityLog');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
 const { uploadFile } = require('../config/storage');
+const { connectMongo } = require('../config/db');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -26,6 +27,7 @@ const geminiModel = genai.getGenerativeModel({ model: 'gemini-2.5-flash' });
  */
 router.get('/:productId', async (req, res) => {
   try {
+    await connectMongo();
     const reviews = await Review.find({ productId: req.params.productId })
       .sort({ createdAt: -1 })
       .limit(20);
@@ -67,6 +69,7 @@ router.get('/:productId', async (req, res) => {
  */
 router.post('/:productId', auth, upload.array('images', 3), async (req, res) => {
   try {
+    await connectMongo();
     const { rating, title, body, userName } = req.body;
     if (!rating || !body) return res.status(400).json({ error: 'Rating and body required' });
 
@@ -110,6 +113,7 @@ router.post('/:productId', auth, upload.array('images', 3), async (req, res) => 
  */
 router.get('/:productId/summary', async (req, res) => {
   try {
+    await connectMongo();
     const reviews = await Review.find({ productId: req.params.productId }).limit(30);
     if (reviews.length === 0) return res.json({ summary: null });
 
@@ -157,6 +161,7 @@ router.get('/:productId/summary', async (req, res) => {
  */
 router.post('/activity/log', auth, async (req, res) => {
   try {
+    await connectMongo();
     const { type, productId, query, metadata } = req.body;
     await ActivityLog.create({ userId: req.user.id, type, productId, query, metadata });
     res.json({ ok: true });
@@ -176,6 +181,7 @@ router.post('/activity/log', auth, async (req, res) => {
  */
 router.get('/activity/history', auth, async (req, res) => {
   try {
+    await connectMongo();
     const logs = await ActivityLog.find({ userId: req.user.id })
       .sort({ createdAt: -1 })
       .limit(50);

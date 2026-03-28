@@ -22,23 +22,44 @@ export default function Cart() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [cart, setCart] = useState({ items: [], total: 0 });
+  const [error, setError] = useState('');
+  const [loadingItem, setLoadingItem] = useState(null);
 
   async function fetchCart() {
     if (!user) return;
-    const { data } = await api.get('/api/cart');
-    setCart(data);
+    try {
+      const { data } = await api.get('/api/cart');
+      setCart(data);
+    } catch {
+      setError('Failed to load cart');
+    }
   }
 
   useEffect(() => { fetchCart(); }, [user]);
 
   async function updateQty(productId, quantity) {
-    await api.put(`/api/cart/${productId}`, { quantity });
-    fetchCart();
+    if (quantity < 1) return;
+    setLoadingItem(productId);
+    try {
+      await api.put(`/api/cart/${productId}`, { quantity });
+      await fetchCart();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update quantity');
+    } finally {
+      setLoadingItem(null);
+    }
   }
 
   async function remove(productId) {
-    await api.delete(`/api/cart/${productId}`);
-    fetchCart();
+    setLoadingItem(productId);
+    try {
+      await api.delete(`/api/cart/${productId}`);
+      await fetchCart();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to remove item');
+    } finally {
+      setLoadingItem(null);
+    }
   }
 
   if (!user) return <div style={s.empty}>Please <Link to="/login">login</Link> to view your cart.</div>;
@@ -47,6 +68,7 @@ export default function Cart() {
   return (
     <div>
       <h1 style={{ marginBottom: '24px' }}>Cart</h1>
+      {error && <div style={{ border: '1px solid #000', padding: '10px', fontSize: '13px', marginBottom: '16px' }}>{error}</div>}
       <div className="cart-layout">
         <div>
           {cart.items.map(item => (
@@ -63,10 +85,11 @@ export default function Cart() {
                 type="number"
                 min="1"
                 value={item.quantity}
-                style={s.qtyInput}
+                disabled={loadingItem === item.productId}
+                style={{ ...s.qtyInput, opacity: loadingItem === item.productId ? 0.5 : 1 }}
                 onChange={e => updateQty(item.productId, parseInt(e.target.value))}
               />
-              <button style={s.removeBtn} onClick={() => remove(item.productId)}>×</button>
+              <button disabled={loadingItem === item.productId} style={{ ...s.removeBtn, opacity: loadingItem === item.productId ? 0.5 : 1 }} onClick={() => remove(item.productId)}>×</button>
             </div>
           ))}
         </div>

@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { esClient } = require('../config/db');
+const { esClient, connectMongo } = require('../config/db');
 const AiLog = require('../models/AiLog');
 
 const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -25,6 +25,7 @@ const chatModel = genai.getGenerativeModel({ model: 'gemini-2.5-flash' });
  */
 router.post('/chat', async (req, res) => {
   try {
+    await connectMongo();
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: 'Message required' });
 
@@ -82,6 +83,7 @@ Your response:`;
  */
 router.get('/logs', async (_req, res) => {
   try {
+    await connectMongo();
     const logs = await AiLog.find().sort({ createdAt: -1 }).limit(50);
     res.json(logs);
   } catch (err) {

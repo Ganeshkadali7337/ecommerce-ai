@@ -12,19 +12,23 @@ export default function ProductDetail() {
   const [product, setProduct] = useState(null);
   const [qty, setQty] = useState(1);
   const [msg, setMsg] = useState('');
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    api.get(`/api/products/${id}`).then(r => setProduct(r.data));
+    api.get(`/api/products/${id}`).then(r => setProduct(r.data)).catch(() => {});
   }, [id]);
 
   async function addToCart() {
+    setAdding(true);
     try {
       await api.post('/api/cart', { productId: product.id, quantity: qty });
       setMsg('Added to cart');
     } catch (err) {
       setMsg(err.response?.data?.error || 'Failed to add to cart');
+    } finally {
+      setAdding(false);
+      setTimeout(() => setMsg(''), 2500);
     }
-    setTimeout(() => setMsg(''), 2000);
   }
 
   if (!product) return <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#616161', marginTop: '40px' }}><Spinner /> Loading product...</div>;
@@ -73,11 +77,11 @@ export default function ProductDetail() {
 
           {user ? (
             <button
-              disabled={product.stock === 0}
+              disabled={product.stock === 0 || adding}
               onClick={addToCart}
-              style={{ background: product.stock > 0 ? '#000' : '#e0e0e0', color: product.stock > 0 ? '#fff' : '#9e9e9e', border: 'none', padding: '14px 32px', fontWeight: 600, fontSize: '15px', width: '100%', cursor: 'pointer' }}
+              style={{ background: product.stock > 0 ? '#000' : '#e0e0e0', color: product.stock > 0 ? '#fff' : '#9e9e9e', border: 'none', padding: '14px 32px', fontWeight: 600, fontSize: '15px', width: '100%', cursor: 'pointer', opacity: adding ? 0.7 : 1 }}
             >
-              Add to Cart
+              {adding ? 'Adding...' : 'Add to Cart'}
             </button>
           ) : (
             <button disabled style={{ background: '#e0e0e0', color: '#9e9e9e', border: 'none', padding: '14px 32px', fontWeight: 600, fontSize: '15px', width: '100%' }}>

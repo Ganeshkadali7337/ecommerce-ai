@@ -31,15 +31,19 @@ export default function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    setLoading(true);
     try {
       await login(form.email, form.password);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -68,7 +72,7 @@ export default function Login() {
             required
           />
         </div>
-        <button type="submit" style={s.btn}>Login</button>
+        <button type="submit" disabled={loading} style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}>{loading ? 'Logging in...' : 'Login'}</button>
         <p style={s.link}>No account? <Link to="/register">Register</Link></p>
       </form>
     </div>
