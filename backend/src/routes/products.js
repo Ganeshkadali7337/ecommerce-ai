@@ -1,9 +1,11 @@
 const router = require('express').Router();
-const { prisma, minioClient, esClient } = require('../config/db');
+const { prisma, minioClient, esClient, redis } = require('../config/db');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
 const ActivityLog = require('../models/ActivityLog');
+
+const CACHE_TTL = 300; // 5 minutes
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -33,6 +35,10 @@ router.get('/', async (req, res) => {
     const skip = (page - 1) * limit;
     const where = req.query.category ? { category: { slug: req.query.category } } : {};
 
+    const cacheKey = `products:list:${req.query.category || 'all'}:${page}:${limit}`;
+    const cached = await redis.get(cacheKey);
+    if (cached) return res.json(JSON.parse(cached));
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
@@ -44,7 +50,9 @@ router.get('/', async (req, res) => {
       prisma.product.count({ where }),
     ]);
 
-    res.json({ products, total, page, pages: Math.ceil(total / limit) });
+    const result = { products, total, page, pages: Math.ceil(total / limit) };
+    await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(result));
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -64,11 +72,16 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
+    const cacheKey = `products:single:${req.params.id}`;
+    const cached = await redis.get(cacheKey);
+    if (cached) return res.json(JSON.parse(cached));
+
     const product = await prisma.product.findUnique({
       where: { id: req.params.id },
       include: { category: true, variants: true },
     });
     if (!product) return res.status(404).json({ error: 'Product not found' });
+    await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(product));
 
     const token = req.headers.authorization?.split(' ')[1];
     if (token) {
@@ -162,6 +175,11 @@ router.put('/:id', auth, async (req, res) => {
       id: product.id,
       doc: { name: product.name, description: product.description, price: product.price },
     });
+
+    // Invalidate cache
+    await redis.del(`products:single:${product.id}`);
+    const keys = await redis.keys('products:list:*');
+    if (keys.length) await redis.del(...keys);
 
     res.json(product);
   } catch (err) {

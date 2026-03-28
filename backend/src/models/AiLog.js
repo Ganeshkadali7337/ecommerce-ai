@@ -5,6 +5,8 @@ const AiLogSchema = new mongoose.Schema({
   prompt: String,
   response: String,
   model: String,
+  tokensUsed: Number,
+  cost: Number,
   createdAt: { type: Date, default: Date.now },
 });
 

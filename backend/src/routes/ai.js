@@ -57,10 +57,15 @@ Your response:`;
 
     const aiResult = await chatModel.generateContent(prompt);
     const reply = aiResult.response.text();
+    const usage = aiResult.response.usageMetadata || {};
+    const inputTokens = usage.promptTokenCount || 0;
+    const outputTokens = usage.candidatesTokenCount || 0;
+    // gemini-2.5-flash pricing: $0.075/1M input, $0.30/1M output
+    const cost = parseFloat(((inputTokens * 0.000000075) + (outputTokens * 0.0000003)).toFixed(6));
 
-    AiLog.create({ type: 'chat', prompt: message, response: reply, model: 'gemini-2.5-flash' }).catch(() => {});
+    AiLog.create({ type: 'chat', prompt: message, response: reply, model: 'gemini-2.5-flash', tokensUsed: inputTokens + outputTokens, cost }).catch(() => {});
 
-    res.json({ reply });
+    res.json({ reply, cost, tokensUsed: inputTokens + outputTokens });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

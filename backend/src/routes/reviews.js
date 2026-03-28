@@ -92,9 +92,15 @@ router.get('/:productId/summary', async (req, res) => {
     );
 
     const summary = result.response.text();
-    const cost = 0;
+    const usage = result.response.usageMetadata || {};
+    const inputTokens = usage.promptTokenCount || 0;
+    const outputTokens = usage.candidatesTokenCount || 0;
+    const cost = parseFloat(((inputTokens * 0.000000075) + (outputTokens * 0.0000003)).toFixed(6));
 
-    res.json({ summary, cost: parseFloat(cost.toFixed(6)) });
+    const AiLog = require('../models/AiLog');
+    AiLog.create({ type: 'summary', prompt: reviewText.slice(0, 200), response: summary, model: 'gemini-2.5-flash', tokensUsed: inputTokens + outputTokens, cost }).catch(() => {});
+
+    res.json({ summary, cost, tokensUsed: inputTokens + outputTokens });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
