@@ -1,6 +1,7 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-const styles = {
+const s = {
   header: {
     borderBottom: '1px solid #000',
     padding: '16px 24px',
@@ -8,15 +9,9 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  logo: {
-    fontWeight: 700,
-    fontSize: '18px',
-    letterSpacing: '0.05em',
-  },
-  nav: {
-    display: 'flex',
-    gap: '24px',
-  },
+  logo: { fontWeight: 700, fontSize: '18px', letterSpacing: '0.05em' },
+  nav: { display: 'flex', gap: '24px', alignItems: 'center', fontSize: '14px' },
+  btn: { background: 'none', border: '1px solid #000', padding: '6px 14px', fontSize: '13px' },
   main: {
     minHeight: 'calc(100vh - 57px)',
     padding: '32px 24px',
@@ -26,17 +21,32 @@ const styles = {
 };
 
 export default function Layout() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate('/');
+  }
+
   return (
     <>
-      <header style={styles.header}>
-        <Link to="/" style={styles.logo}>SHOPAI</Link>
-        <nav style={styles.nav}>
+      <header style={s.header}>
+        <Link to="/" style={s.logo}>SHOPAI</Link>
+        <nav style={s.nav}>
           <Link to="/products">Products</Link>
           <Link to="/cart">Cart</Link>
-          <Link to="/login">Login</Link>
+          {user ? (
+            <>
+              <Link to="/orders">Orders</Link>
+              <button style={s.btn} onClick={handleLogout}>Logout</button>
+            </>
+          ) : (
+            <Link to="/login">Login</Link>
+          )}
         </nav>
       </header>
-      <main style={styles.main}>
+      <main style={s.main}>
         <Outlet />
       </main>
     </>
