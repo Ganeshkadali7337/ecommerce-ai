@@ -175,6 +175,11 @@ async function seed() {
     node: process.env.ELASTICSEARCH_URL,
     ...(process.env.ELASTICSEARCH_API_KEY && { auth: { apiKey: process.env.ELASTICSEARCH_API_KEY } }),
   });
+
+  // Delete and recreate index to remove stale documents from previous seeds
+  try { await es.indices.delete({ index: 'products' }); } catch {}
+  await es.indices.create({ index: 'products' }).catch(() => {});
+
   for (const product of allProducts) {
     const cat = createdCategories.find(c => c.id === product.categoryId);
     await es.index({
