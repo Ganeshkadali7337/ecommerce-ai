@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Reviews from '../components/Reviews';
+import Spinner from '../components/Spinner';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -25,7 +26,7 @@ export default function ProductDetail() {
     setTimeout(() => setMsg(''), 2000);
   }
 
-  if (!product) return <div>Loading...</div>;
+  if (!product) return <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#616161', marginTop: '40px' }}><Spinner /> Loading product...</div>;
 
   return (
     <div>

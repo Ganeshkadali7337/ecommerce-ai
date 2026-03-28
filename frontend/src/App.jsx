@@ -9,6 +9,7 @@ import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders, { OrderDetail } from './pages/Orders';
+import Search from './pages/Search';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="checkout" element={<Checkout />} />
             <Route path="orders" element={<Orders />} />
             <Route path="orders/:id" element={<OrderDetail />} />
+            <Route path="search" element={<Search />} />
           </Route>
         </Routes>
       </BrowserRouter>
