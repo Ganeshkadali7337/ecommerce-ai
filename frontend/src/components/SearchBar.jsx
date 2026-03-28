@@ -31,7 +31,7 @@ export default function SearchBar() {
   }
 
   return (
-    <div ref={ref} style={{ position: 'relative', width: '280px' }}>
+    <div ref={ref} style={{ position: 'relative', width: '100%' }}>
       <input
         style={{ border: '1px solid #000', padding: '8px 12px', width: '100%', outline: 'none', fontSize: '14px' }}
         placeholder="Search products..."

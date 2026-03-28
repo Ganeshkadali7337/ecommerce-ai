@@ -20,6 +20,7 @@ body {
   color: var(--black);
   background: var(--white);
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
 a {
