@@ -1,5 +1,5 @@
 const PDFDocument = require('pdfkit');
-const { minioClient } = require('../config/db');
+const { uploadFile } = require('../config/storage');
 
 async function generateInvoice(order) {
   return new Promise((resolve, reject) => {
@@ -10,14 +10,8 @@ async function generateInvoice(order) {
     doc.on('end', async () => {
       try {
         const buffer = Buffer.concat(chunks);
-        const key = `invoices/order-${order.id}.pdf`;
-        const bucket = process.env.MINIO_BUCKET;
-
-        await minioClient.putObject(bucket, key, buffer, buffer.length, {
-          'Content-Type': 'application/pdf',
-        });
-
-        resolve(`http://localhost:9000/${bucket}/${key}`);
+        const url = await uploadFile(buffer, `order-${order.id}.pdf`, 'application/pdf', 'invoices');
+        resolve(url);
       } catch (err) {
         reject(err);
       }

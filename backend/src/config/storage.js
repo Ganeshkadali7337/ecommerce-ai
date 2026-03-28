@@ -27,9 +27,10 @@ async function uploadFile(buffer, originalname, mimetype, folder = 'products') {
 
   // Vercel: Cloudinary
   if (cloudinary) {
+    const resourceType = mimetype === 'application/pdf' ? 'raw' : 'image';
     return await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { folder, resource_type: 'image' },
+        { folder, resource_type: resourceType },
         (err, result) => err ? reject(err) : resolve(result.secure_url)
       );
       stream.end(buffer);
