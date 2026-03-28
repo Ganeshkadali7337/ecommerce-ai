@@ -9,7 +9,7 @@ export default function SearchBar() {
   const ref = useRef(null);
 
   useEffect(() => {
-    if (q.length < 2) { setSuggestions([]); return; }
+    if (q.length < 1) { setSuggestions([]); return; }
     const t = setTimeout(() => {
       api.get(`/api/search/autocomplete?q=${encodeURIComponent(q)}`)
         .then(r => setSuggestions(r.data))

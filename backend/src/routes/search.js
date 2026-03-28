@@ -94,10 +94,12 @@ router.get('/autocomplete', async (req, res) => {
       index: 'products',
       body: {
         query: {
-          multi_match: {
-            query: q,
-            fields: ['name^3', 'category'],
-            fuzziness: 'AUTO',
+          bool: {
+            should: [
+              { match_phrase_prefix: { name: { query: q, max_expansions: 20 } } },
+              { match_phrase_prefix: { category: { query: q, max_expansions: 10 } } },
+              { multi_match: { query: q, fields: ['name^3', 'category'], fuzziness: 'AUTO' } },
+            ],
           },
         },
         _source: ['name', 'category'],
