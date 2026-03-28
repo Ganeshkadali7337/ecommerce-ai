@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("customer")
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  name        String
+  slug        String         @unique
+  description String
+  price       Float
+  stock       Int            @default(0)
+  imageUrl    String?
+  categoryId  String
+  category    Category       @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
+  orderItems  OrderItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model ProductVariant {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  value     String
+  price     Float?
+  stock     Int     @default(0)
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  status      String      @default("pending")
+  total       Float
+  items       OrderItem[]
+  payment     Payment?
+  invoiceUrl  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id])
+  stripePaymentId String?
+  status          String   @default("pending")
+  amount          Float
+  createdAt       DateTime @default(now())
+}
