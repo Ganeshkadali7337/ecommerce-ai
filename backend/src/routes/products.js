@@ -33,9 +33,14 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
-    const where = req.query.category ? { category: { slug: req.query.category } } : {};
+    const { category, minPrice, maxPrice, minRating } = req.query;
 
-    const cacheKey = `products:list:${req.query.category || 'all'}:${page}:${limit}`;
+    const where = {};
+    if (category) where.category = { slug: category };
+    if (minPrice || maxPrice) where.price = { gte: minPrice ? parseFloat(minPrice) : undefined, lte: maxPrice ? parseFloat(maxPrice) : undefined };
+    if (minRating) where.rating = { gte: parseFloat(minRating) };
+
+    const cacheKey = `products:list:${category || 'all'}:${page}:${limit}:${minPrice||''}:${maxPrice||''}:${minRating||''}`;
     const cached = await redis.get(cacheKey);
     if (cached) return res.json(JSON.parse(cached));
 

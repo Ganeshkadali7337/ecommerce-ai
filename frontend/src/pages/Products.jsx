@@ -21,6 +21,7 @@ export default function Products() {
   const [data, setData] = useState({ products: [], total: 0, pages: 1 });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState({ minPrice: '', maxPrice: '', minRating: '' });
   const page = parseInt(searchParams.get('page') || '1');
   const category = searchParams.get('category') || '';
 
@@ -31,9 +32,12 @@ export default function Products() {
   useEffect(() => {
     const params = { page, limit: 20 };
     if (category) params.category = category;
+    if (filters.minPrice) params.minPrice = filters.minPrice;
+    if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+    if (filters.minRating) params.minRating = filters.minRating;
     setLoading(true);
     api.get('/api/products', { params }).then(r => setData(r.data)).finally(() => setLoading(false));
-  }, [page, category]);
+  }, [page, category, filters]);
 
   function setCategory(slug) {
     setSearchParams(slug ? { category: slug } : {});
@@ -45,32 +49,52 @@ export default function Products() {
     setSearchParams(params);
   }
 
+  function applyFilter(key, val) {
+    setFilters(f => ({ ...f, [key]: val }));
+  }
+
   return (
     <div>
       <h1 style={{ marginBottom: '24px' }}>Products</h1>
       <div className="category-filter-mobile">
-        <select value={category} onChange={e => setCategory(e.target.value)}>
+        <select value={category} onChange={e => setCategory(e.target.value)} style={{ marginBottom: '8px' }}>
           <option value="">All Categories</option>
-          {categories.map(c => (
-            <option key={c.id} value={c.slug}>{c.name}</option>
-          ))}
+          {categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
         </select>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <input type="number" placeholder="Min price" value={filters.minPrice} onChange={e => applyFilter('minPrice', e.target.value)}
+            style={{ flex: 1, minWidth: '80px', border: '1px solid #e0e0e0', padding: '8px', outline: 'none' }} />
+          <input type="number" placeholder="Max price" value={filters.maxPrice} onChange={e => applyFilter('maxPrice', e.target.value)}
+            style={{ flex: 1, minWidth: '80px', border: '1px solid #e0e0e0', padding: '8px', outline: 'none' }} />
+          <select value={filters.minRating} onChange={e => applyFilter('minRating', e.target.value)}
+            style={{ flex: 1, minWidth: '100px', border: '1px solid #e0e0e0', padding: '8px', background: '#fff' }}>
+            <option value="">Any rating</option>
+            {[4, 3, 2, 1].map(n => <option key={n} value={n}>{n}+ stars</option>)}
+          </select>
+        </div>
       </div>
       <div className="products-layout">
         <aside className="products-sidebar">
           <div style={s.sidebarTitle}>Category</div>
-          <div style={{ ...s.categoryItem, ...(category === '' ? s.active : {}) }} onClick={() => setCategory('')}>
-            All
-          </div>
+          <div style={{ ...s.categoryItem, ...(category === '' ? s.active : {}) }} onClick={() => setCategory('')}>All</div>
           {categories.map(c => (
-            <div
-              key={c.id}
-              style={{ ...s.categoryItem, ...(category === c.slug ? s.active : {}) }}
-              onClick={() => setCategory(c.slug)}
-            >
+            <div key={c.id} style={{ ...s.categoryItem, ...(category === c.slug ? s.active : {}) }} onClick={() => setCategory(c.slug)}>
               {c.name}
             </div>
           ))}
+
+          <div style={{ ...s.sidebarTitle, marginTop: '24px' }}>Price</div>
+          <input type="number" placeholder="Min" value={filters.minPrice} onChange={e => applyFilter('minPrice', e.target.value)}
+            style={{ border: '1px solid #e0e0e0', padding: '6px 8px', width: '100%', outline: 'none', marginBottom: '8px' }} />
+          <input type="number" placeholder="Max" value={filters.maxPrice} onChange={e => applyFilter('maxPrice', e.target.value)}
+            style={{ border: '1px solid #e0e0e0', padding: '6px 8px', width: '100%', outline: 'none' }} />
+
+          <div style={{ ...s.sidebarTitle, marginTop: '24px' }}>Min Rating</div>
+          <select value={filters.minRating} onChange={e => applyFilter('minRating', e.target.value)}
+            style={{ border: '1px solid #e0e0e0', padding: '6px 8px', width: '100%', background: '#fff' }}>
+            <option value="">Any</option>
+            {[4, 3, 2, 1].map(n => <option key={n} value={n}>{n}+ stars</option>)}
+          </select>
         </aside>
         <div>
           <div style={{ color: '#616161', fontSize: '13px', marginBottom: '16px' }}>

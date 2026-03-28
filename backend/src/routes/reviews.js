@@ -3,7 +3,11 @@ const auth = require('../middleware/auth');
 const Review = require('../models/Review');
 const ActivityLog = require('../models/ActivityLog');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const multer = require('multer');
+const { v4: uuid } = require('uuid');
+const { minioClient } = require('../config/db');
 
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const geminiModel = genai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
@@ -62,18 +66,29 @@ router.get('/:productId', async (req, res) => {
  *               title: { type: string, example: "Great product" }
  *               body: { type: string, example: "Really happy with this purchase." }
  */
-router.post('/:productId', auth, async (req, res) => {
+router.post('/:productId', auth, upload.array('images', 3), async (req, res) => {
   try {
-    const { rating, title, body } = req.body;
+    const { rating, title, body, userName } = req.body;
     if (!rating || !body) return res.status(400).json({ error: 'Rating and body required' });
+
+    const images = [];
+    if (req.files && req.files.length > 0 && minioClient) {
+      const bucket = process.env.MINIO_BUCKET || 'ecommerce';
+      for (const file of req.files) {
+        const key = `reviews/${uuid()}-${file.originalname}`;
+        await minioClient.putObject(bucket, key, file.buffer, file.size, { 'Content-Type': file.mimetype });
+        images.push(`http://localhost:9000/${bucket}/${key}`);
+      }
+    }
 
     const review = await Review.create({
       productId: req.params.productId,
       userId: req.user.id,
-      userName: req.body.userName || 'User',
-      rating,
+      userName: userName || 'User',
+      rating: parseInt(rating),
       title,
       body,
+      images,
     });
 
     res.status(201).json(review);

@@ -12,6 +12,7 @@ export default function Reviews({ productId }) {
   const [summary, setSummary] = useState(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [form, setForm] = useState({ rating: 5, title: '', body: '' });
+  const [images, setImages] = useState([]);
   const [submitted, setSubmitted] = useState(false);
 
   async function load() {
@@ -34,9 +35,16 @@ export default function Reviews({ productId }) {
 
   async function submitReview(e) {
     e.preventDefault();
-    await api.post(`/api/reviews/${productId}`, { ...form, userName: user.name });
+    const fd = new FormData();
+    fd.append('rating', form.rating);
+    fd.append('title', form.title);
+    fd.append('body', form.body);
+    fd.append('userName', user.name);
+    images.forEach(f => fd.append('images', f));
+    await api.post(`/api/reviews/${productId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     setSubmitted(true);
     setForm({ rating: 5, title: '', body: '' });
+    setImages([]);
     load();
   }
 
@@ -77,6 +85,13 @@ export default function Reviews({ productId }) {
           </div>
           {r.title && <div style={{ fontWeight: 600, marginBottom: '4px' }}>{r.title}</div>}
           <div style={{ color: '#616161', fontSize: '14px', lineHeight: '1.6' }}>{r.body}</div>
+          {r.images?.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+              {r.images.map((src, i) => (
+                <img key={i} src={src} alt="review" style={{ width: '80px', height: '80px', objectFit: 'cover', border: '1px solid #e0e0e0' }} />
+              ))}
+            </div>
+          )}
         </div>
       ))}
 
@@ -110,6 +125,14 @@ export default function Reviews({ productId }) {
               style={{ border: '1px solid #e0e0e0', padding: '8px 10px', width: '100%', outline: 'none', resize: 'vertical', minHeight: '80px' }}
               value={form.body}
               onChange={e => setForm({ ...form, body: e.target.value })}
+            />
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Photos (optional, max 3)</label>
+            <input
+              type="file" accept="image/*" multiple
+              onChange={e => setImages(Array.from(e.target.files).slice(0, 3))}
+              style={{ fontSize: '13px' }}
             />
           </div>
           <button type="submit" style={{ background: '#000', color: '#fff', border: 'none', padding: '10px 24px', fontWeight: 600, cursor: 'pointer' }}>
