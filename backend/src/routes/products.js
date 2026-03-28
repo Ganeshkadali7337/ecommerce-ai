@@ -201,6 +201,63 @@ router.post('/:id/image', auth, upload.single('image'), async (req, res) => {
 
 /**
  * @swagger
+ * /api/products/{id}/similar:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get similar products using vector search
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ */
+router.get('/:id/similar', async (req, res) => {
+  try {
+    const { qdrantClient } = require('../config/db');
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+    const product = await prisma.product.findUnique({
+      where: { id: req.params.id },
+      include: { category: true },
+    });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    let similar = [];
+    try {
+      const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const embModel = genai.getGenerativeModel({ model: 'gemini-embedding-001' });
+      const text = `${product.name} ${product.description} ${product.category?.name || ''}`;
+      const embResult = await embModel.embedContent(text);
+      const vector = embResult.embedding.values;
+
+      const results = await qdrantClient.search('products', {
+        vector,
+        limit: 5,
+        filter: { must_not: [{ key: 'product_id', match: { value: product.id } }] },
+      });
+
+      const ids = results.map(r => r.payload?.product_id).filter(Boolean);
+      similar = await prisma.product.findMany({
+        where: { id: { in: ids } },
+        include: { category: true },
+      });
+    } catch {
+      // fallback: same category products
+      similar = await prisma.product.findMany({
+        where: { categoryId: product.categoryId, id: { not: product.id } },
+        include: { category: true },
+        take: 4,
+      });
+    }
+
+    res.json(similar);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * @swagger
  * /api/products/meta/categories:
  *   get:
  *     tags: [Products]

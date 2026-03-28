@@ -3,6 +3,8 @@ const { PrismaClient } = require('@prisma/client');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { Client: ESClient } = require('@elastic/elasticsearch');
+const { QdrantClient } = require('@qdrant/js-client-rest');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const prisma = new PrismaClient();
 
@@ -179,6 +181,28 @@ async function seed() {
     }).catch(() => {});
   }
   console.log('Indexed products in Elasticsearch');
+
+  try {
+    const qdrant = new QdrantClient({ url: process.env.QDRANT_URL });
+    const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const embModel = genai.getGenerativeModel({ model: 'gemini-embedding-001' });
+
+    try { await qdrant.deleteCollection('products'); } catch {}
+    await qdrant.createCollection('products', { vectors: { size: 3072, distance: 'Cosine' } });
+
+    for (const product of allProducts) {
+      const cat = createdCategories.find(c => c.id === product.categoryId);
+      const text = `${product.name} ${product.description} ${cat?.name || ''}`;
+      const embResult = await embModel.embedContent(text);
+      const vector = embResult.embedding.values;
+      await qdrant.upsert('products', {
+        points: [{ id: product.id, vector, payload: { product_id: product.id } }],
+      });
+    }
+    console.log('Indexed products in Qdrant (vector search)');
+  } catch (err) {
+    console.log('Qdrant indexing skipped:', err.message);
+  }
 
   const reviews = [];
   for (let i = 0; i < 200; i++) {
