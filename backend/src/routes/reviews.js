@@ -2,9 +2,10 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const Review = require('../models/Review');
 const ActivityLog = require('../models/ActivityLog');
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const geminiModel = genai.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 /**
  * @swagger
@@ -86,17 +87,12 @@ router.get('/:productId/summary', async (req, res) => {
       .map(r => `${r.rating}/5: ${r.body}`)
       .join('\n');
 
-    const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 150,
-      messages: [{
-        role: 'user',
-        content: `Summarize these product reviews in one sentence, like "Customers say it...". Reviews:\n${reviewText}`,
-      }],
-    });
+    const result = await geminiModel.generateContent(
+      `Summarize these product reviews in one sentence, like "Customers say it...". Reviews:\n${reviewText}`
+    );
 
-    const summary = message.content[0].text;
-    const cost = (message.usage.input_tokens * 0.00000025) + (message.usage.output_tokens * 0.00000125);
+    const summary = result.response.text();
+    const cost = 0;
 
     res.json({ summary, cost: parseFloat(cost.toFixed(6)) });
   } catch (err) {

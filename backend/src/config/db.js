@@ -81,7 +81,7 @@ async function initQdrant() {
     const exists = collections.collections.some(c => c.name === 'products');
     if (!exists) {
       await qdrantClient.createCollection('products', {
-        vectors: { size: 1536, distance: 'Cosine' },
+        vectors: { size: 3072, distance: 'Cosine' },
       });
       console.log('Qdrant collection created');
     } else {
