@@ -47,10 +47,10 @@ export default function Cart() {
   return (
     <div>
       <h1 style={{ marginBottom: '24px' }}>Cart</h1>
-      <div style={s.layout}>
+      <div className="cart-layout">
         <div>
           {cart.items.map(item => (
-            <div key={item.productId} style={s.row}>
+            <div key={item.productId} className="cart-row">
               {item.product?.imageUrl
                 ? <img src={item.product.imageUrl} alt={item.product.name} style={s.img} />
                 : <div style={s.img} />

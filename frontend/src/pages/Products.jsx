@@ -48,8 +48,16 @@ export default function Products() {
   return (
     <div>
       <h1 style={{ marginBottom: '24px' }}>Products</h1>
-      <div style={s.layout}>
-        <aside style={s.sidebar}>
+      <div className="category-filter-mobile">
+        <select value={category} onChange={e => setCategory(e.target.value)}>
+          <option value="">All Categories</option>
+          {categories.map(c => (
+            <option key={c.id} value={c.slug}>{c.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="products-layout">
+        <aside className="products-sidebar">
           <div style={s.sidebarTitle}>Category</div>
           <div style={{ ...s.categoryItem, ...(category === '' ? s.active : {}) }} onClick={() => setCategory('')}>
             All
