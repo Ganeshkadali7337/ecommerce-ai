@@ -1,41 +1,58 @@
 import { useEffect, useState } from 'react';
-
-const styles = {
-  container: { maxWidth: '800px' },
-  title: { marginBottom: '8px' },
-  subtitle: { color: '#616161', marginBottom: '32px' },
-  statusBox: {
-    border: '1px solid #000',
-    padding: '16px',
-    marginTop: '24px',
-    fontFamily: 'monospace',
-    fontSize: '13px',
-  },
-  label: { fontWeight: 600, marginBottom: '8px' },
-};
+import { Link } from 'react-router-dom';
+import api from '../api/client';
 
 export default function Home() {
-  const [health, setHealth] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [featured, setFeatured] = useState([]);
 
   useEffect(() => {
-    fetch('/api/health')
-      .then(r => r.json())
-      .then(setHealth)
-      .catch(() => setHealth({ status: 'error' }));
+    api.get('/api/products/meta/categories').then(r => setCategories(r.data));
+    api.get('/api/products?limit=4').then(r => setFeatured(r.data.products || []));
   }, []);
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>ShopAI</h1>
-      <p style={styles.subtitle}>AI-powered e-commerce platform</p>
+    <div>
+      <div style={{ borderBottom: '1px solid #000', paddingBottom: '32px', marginBottom: '40px' }}>
+        <h1 style={{ fontSize: '32px', marginBottom: '8px' }}>Welcome to ShopAI</h1>
+        <p style={{ color: '#616161' }}>AI-powered shopping — search, discover, and buy smarter.</p>
+        <Link to="/products">
+          <button style={{ marginTop: '20px', background: '#000', color: '#fff', border: 'none', padding: '12px 28px', fontWeight: 600 }}>
+            Shop Now
+          </button>
+        </Link>
+      </div>
 
-      <div style={styles.statusBox}>
-        <div style={styles.label}>API Status</div>
-        {health ? (
-          <div>{health.status === 'ok' ? '✓ Backend connected' : '✗ Backend unreachable'}</div>
-        ) : (
-          <div>Checking...</div>
-        )}
+      <div style={{ marginBottom: '40px' }}>
+        <h2 style={{ marginBottom: '16px' }}>Categories</h2>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          {categories.map(c => (
+            <Link key={c.id} to={`/products?category=${c.slug}`}>
+              <div style={{ border: '1px solid #000', padding: '10px 20px', fontSize: '14px' }}>
+                {c.name}
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 style={{ marginBottom: '16px' }}>Latest Products</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+          {featured.map(p => (
+            <Link key={p.id} to={`/products/${p.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+              <div style={{ border: '1px solid #e0e0e0' }}>
+                <div style={{ background: '#f5f5f5', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9e9e9e', fontSize: '12px' }}>
+                  {p.imageUrl ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : 'No image'}
+                </div>
+                <div style={{ padding: '10px' }}>
+                  <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{p.name}</div>
+                  <div style={{ fontWeight: 700 }}>${p.price.toFixed(2)}</div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );
