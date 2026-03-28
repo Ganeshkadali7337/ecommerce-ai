@@ -1,9 +1,10 @@
 const router = require('express').Router();
-const { prisma, minioClient, esClient, redis } = require('../config/db');
+const { prisma, esClient, redis } = require('../config/db');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
 const ActivityLog = require('../models/ActivityLog');
+const { uploadFile } = require('../config/storage');
 
 const CACHE_TTL = 300; // 5 minutes
 
@@ -221,15 +222,7 @@ router.post('/:id/image', auth, upload.single('image'), async (req, res) => {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    const ext = req.file.originalname.split('.').pop();
-    const key = `products/${req.params.id}.${ext}`;
-    const bucket = process.env.MINIO_BUCKET;
-
-    await minioClient.putObject(bucket, key, req.file.buffer, req.file.size, {
-      'Content-Type': req.file.mimetype,
-    });
-
-    const imageUrl = `http://localhost:9000/${bucket}/${key}`;
+    const imageUrl = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype, 'products');
     await prisma.product.update({ where: { id: req.params.id }, data: { imageUrl } });
     res.json({ imageUrl });
   } catch (err) {

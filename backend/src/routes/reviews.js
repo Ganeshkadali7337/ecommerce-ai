@@ -4,8 +4,7 @@ const Review = require('../models/Review');
 const ActivityLog = require('../models/ActivityLog');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
-const { v4: uuid } = require('uuid');
-const { minioClient } = require('../config/db');
+const { uploadFile } = require('../config/storage');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -72,12 +71,12 @@ router.post('/:productId', auth, upload.array('images', 3), async (req, res) => 
     if (!rating || !body) return res.status(400).json({ error: 'Rating and body required' });
 
     const images = [];
-    if (req.files && req.files.length > 0 && minioClient) {
-      const bucket = process.env.MINIO_BUCKET || 'ecommerce';
+    if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const key = `reviews/${uuid()}-${file.originalname}`;
-        await minioClient.putObject(bucket, key, file.buffer, file.size, { 'Content-Type': file.mimetype });
-        images.push(`http://localhost:9000/${bucket}/${key}`);
+        try {
+          const url = await uploadFile(file.buffer, file.originalname, file.mimetype, 'reviews');
+          images.push(url);
+        } catch (_) {}
       }
     }
 
