@@ -29,13 +29,13 @@ const esClient = new ESClient({
 
 const qdrantClient = new QdrantClient({ url: process.env.QDRANT_URL, apiKey: process.env.QDRANT_API_KEY });
 
-const minioClient = new Minio.Client({
+const minioClient = process.env.MINIO_ENDPOINT ? new Minio.Client({
   endPoint: process.env.MINIO_ENDPOINT,
   port: parseInt(process.env.MINIO_PORT),
   useSSL: false,
   accessKey: process.env.MINIO_ROOT_USER,
   secretKey: process.env.MINIO_ROOT_PASSWORD,
-});
+}) : null;
 
 async function initMinio() {
   const bucket = process.env.MINIO_BUCKET;
