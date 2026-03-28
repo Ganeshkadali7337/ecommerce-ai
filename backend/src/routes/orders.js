@@ -33,32 +33,6 @@ router.get('/', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/orders/{id}:
- *   get:
- *     tags: [Orders]
- *     summary: Get single order
- *     security:
- *       - bearerAuth: []
- */
-router.get('/:id', auth, async (req, res) => {
-  try {
-    const order = await prisma.order.findFirst({
-      where: { id: req.params.id, userId: req.user.id },
-      include: {
-        items: { include: { product: true } },
-        payment: true,
-        user: { select: { name: true, email: true } },
-      },
-    });
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    res.json(order);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/**
- * @swagger
  * /api/orders/checkout:
  *   post:
  *     tags: [Orders]
@@ -117,50 +91,6 @@ router.post('/checkout', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/orders/{id}/confirm:
- *   post:
- *     tags: [Orders]
- *     summary: Confirm payment and finalize order
- *     security:
- *       - bearerAuth: []
- */
-router.post('/:id/confirm', auth, async (req, res) => {
-  try {
-    const order = await prisma.order.findFirst({
-      where: { id: req.params.id, userId: req.user.id },
-      include: { items: { include: { product: true } }, payment: true, user: true },
-    });
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-
-    for (const item of order.items) {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } },
-      });
-    }
-
-    await redis.del(`cart:${req.user.id}`);
-
-    const invoiceUrl = await generateInvoice(order);
-
-    const updated = await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: 'paid',
-        invoiceUrl,
-        payment: { update: { status: 'paid' } },
-      },
-      include: { items: { include: { product: true } }, payment: true },
-    });
-
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/**
- * @swagger
  * /api/orders/also-bought/{productId}:
  *   get:
  *     tags: [Orders]
@@ -205,6 +135,86 @@ router.get('/also-bought/:productId', async (req, res) => {
     });
 
     res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/orders/{id}:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get single order
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ */
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const order = await prisma.order.findFirst({
+      where: { id: req.params.id, userId: req.user.id },
+      include: {
+        items: { include: { product: true } },
+        payment: true,
+        user: { select: { name: true, email: true } },
+      },
+    });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/orders/{id}/confirm:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Confirm payment and finalize order
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ */
+router.post('/:id/confirm', auth, async (req, res) => {
+  try {
+    const order = await prisma.order.findFirst({
+      where: { id: req.params.id, userId: req.user.id },
+      include: { items: { include: { product: true } }, payment: true, user: true },
+    });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    for (const item of order.items) {
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: { stock: { decrement: item.quantity } },
+      });
+    }
+
+    await redis.del(`cart:${req.user.id}`);
+
+    const invoiceUrl = await generateInvoice(order);
+
+    const updated = await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: 'paid',
+        invoiceUrl,
+        payment: { update: { status: 'paid' } },
+      },
+      include: { items: { include: { product: true } }, payment: true },
+    });
+
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

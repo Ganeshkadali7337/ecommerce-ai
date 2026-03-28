@@ -192,9 +192,24 @@ router.put('/:id', auth, async (req, res) => {
  * /api/products/{id}/image:
  *   post:
  *     tags: [Products]
- *     summary: Upload product image
+ *     summary: Upload product image (admin)
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
  */
 router.post('/:id/image', auth, upload.single('image'), async (req, res) => {
   try {
