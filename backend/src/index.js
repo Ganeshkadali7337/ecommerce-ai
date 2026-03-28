@@ -34,7 +34,7 @@ app.use('/api/upload', require('./routes/upload'));
 
 async function start() {
   await connectMongo();
-  await initMinio();
+  if (process.env.MINIO_ENDPOINT) await initMinio();
   await initElasticsearch();
   await initQdrant();
 
@@ -42,4 +42,13 @@ async function start() {
   app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
 }
 
-start().catch(console.error);
+if (require.main === module) {
+  start().catch(console.error);
+} else {
+  // Vercel serverless
+  connectMongo().catch(console.error);
+  initElasticsearch().catch(console.error);
+  initQdrant().catch(console.error);
+}
+
+module.exports = app;
