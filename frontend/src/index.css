@@ -41,3 +41,7 @@ input, textarea, select {
 h1 { font-size: 24px; font-weight: 600; }
 h2 { font-size: 20px; font-weight: 600; }
 h3 { font-size: 16px; font-weight: 600; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

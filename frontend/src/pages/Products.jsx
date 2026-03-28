@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import ProductCard from '../components/ProductCard';
+import Spinner from '../components/Spinner';
 
 const s = {
   layout: { display: 'grid', gridTemplateColumns: '200px 1fr', gap: '32px' },
@@ -19,6 +20,7 @@ export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState({ products: [], total: 0, pages: 1 });
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
   const page = parseInt(searchParams.get('page') || '1');
   const category = searchParams.get('category') || '';
 
@@ -29,7 +31,8 @@ export default function Products() {
   useEffect(() => {
     const params = { page, limit: 20 };
     if (category) params.category = category;
-    api.get('/api/products', { params }).then(r => setData(r.data));
+    setLoading(true);
+    api.get('/api/products', { params }).then(r => setData(r.data)).finally(() => setLoading(false));
   }, [page, category]);
 
   function setCategory(slug) {
@@ -65,9 +68,13 @@ export default function Products() {
           <div style={{ color: '#616161', fontSize: '13px', marginBottom: '16px' }}>
             {data.total} products
           </div>
-          <div style={s.grid}>
-            {data.products.map(p => <ProductCard key={p.id} product={p} />)}
-          </div>
+          {loading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#616161' }}><Spinner /> Loading...</div>
+          ) : (
+            <div style={s.grid}>
+              {data.products.map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
+          )}
           {data.pages > 1 && (
             <div style={s.pagination}>
               {Array.from({ length: data.pages }, (_, i) => i + 1).map(p => (

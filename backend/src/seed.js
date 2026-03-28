@@ -2,6 +2,7 @@ require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { Client: ESClient } = require('@elastic/elasticsearch');
 
 const prisma = new PrismaClient();
 
@@ -167,6 +168,17 @@ async function seed() {
     }
   }
   console.log(`Created ${allProducts.length} products`);
+
+  const es = new ESClient({ node: process.env.ELASTICSEARCH_URL });
+  for (const product of allProducts) {
+    const cat = createdCategories.find(c => c.id === product.categoryId);
+    await es.index({
+      index: 'products',
+      id: product.id,
+      document: { name: product.name, description: product.description, category: cat?.name || '', price: product.price, rating: 4 },
+    }).catch(() => {});
+  }
+  console.log('Indexed products in Elasticsearch');
 
   const reviews = [];
   for (let i = 0; i < 200; i++) {

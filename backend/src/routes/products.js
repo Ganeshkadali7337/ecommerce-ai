@@ -93,6 +93,18 @@ router.get('/:id', async (req, res) => {
  *     summary: Create product (admin)
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string, example: "Nike Air Max" }
+ *               description: { type: string, example: "Classic running shoe" }
+ *               price: { type: number, example: 99.99 }
+ *               stock: { type: integer, example: 50 }
+ *               categoryId: { type: string, example: "paste-category-id-here" }
  */
 router.post('/', auth, async (req, res) => {
   try {
@@ -189,7 +201,7 @@ router.post('/:id/image', auth, upload.single('image'), async (req, res) => {
 
 /**
  * @swagger
- * /api/products/categories:
+ * /api/products/meta/categories:
  *   get:
  *     tags: [Products]
  *     summary: List all categories
