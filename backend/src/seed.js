@@ -171,7 +171,10 @@ async function seed() {
   }
   console.log(`Created ${allProducts.length} products`);
 
-  const es = new ESClient({ node: process.env.ELASTICSEARCH_URL });
+  const es = new ESClient({
+    node: process.env.ELASTICSEARCH_URL,
+    ...(process.env.ELASTICSEARCH_API_KEY && { auth: { apiKey: process.env.ELASTICSEARCH_API_KEY } }),
+  });
   for (const product of allProducts) {
     const cat = createdCategories.find(c => c.id === product.categoryId);
     await es.index({
