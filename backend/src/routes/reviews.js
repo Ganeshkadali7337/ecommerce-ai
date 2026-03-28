@@ -5,7 +5,7 @@ const ActivityLog = require('../models/ActivityLog');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
 const { uploadFile } = require('../config/storage');
-const { connectMongo } = require('../config/db');
+const { connectMongo, prisma, redis } = require('../config/db');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -92,6 +92,15 @@ router.post('/:productId', auth, upload.array('images', 3), async (req, res) => 
       body,
       images,
     });
+
+    // Sync avg rating back to PostgreSQL product record
+    const allReviews = await Review.find({ productId: req.params.productId });
+    const avgRating = allReviews.length
+      ? parseFloat((allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length).toFixed(2))
+      : 0;
+    prisma.product.update({ where: { id: req.params.productId }, data: { rating: avgRating } })
+      .then(() => redis.del(`products:single:${req.params.productId}`))
+      .catch(() => {});
 
     res.status(201).json(review);
   } catch (err) {

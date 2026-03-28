@@ -207,15 +207,30 @@ async function seed() {
     console.log('Qdrant indexing skipped:', err.message);
   }
 
+  // Assign a target avg rating per product — spread across 1–5 so filters are meaningful
+  const productRatingTarget = allProducts.map((_, idx) => {
+    // Distribute: ~20% get 5, ~30% get 4, ~25% get 3, ~15% get 2, ~10% get 1
+    const buckets = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+                     2, 2, 2, 2, 2, 2, 2,
+                     1, 1, 1, 1, 1, 1];
+    return buckets[idx % buckets.length];
+  });
+
   const reviews = [];
   for (let i = 0; i < 200; i++) {
     const product = allProducts[i % allProducts.length];
     const user = users[i % users.length];
+    const target = productRatingTarget[i % allProducts.length];
+    // Allow ±1 variation around the target, clamped to 1–5
+    const variation = Math.floor(Math.random() * 3) - 1;
+    const rating = Math.min(5, Math.max(1, target + variation));
     reviews.push({
       productId: product.id,
       userId: user.id,
       userName: user.name,
-      rating: Math.floor(Math.random() * 2) + 4,
+      rating,
       title: `Review ${i + 1}`,
       body: reviewTexts[i % reviewTexts.length],
       createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
@@ -223,6 +238,22 @@ async function seed() {
   }
   await Review.insertMany(reviews);
   console.log(`Created 200 reviews`);
+
+  // Calculate avg rating per product and sync to PostgreSQL + Elasticsearch
+  for (const product of allProducts) {
+    const productReviews = reviews.filter(r => r.productId === product.id);
+    const avgRating = productReviews.length
+      ? parseFloat((productReviews.reduce((s, r) => s + r.rating, 0) / productReviews.length).toFixed(2))
+      : 0;
+    await prisma.product.update({ where: { id: product.id }, data: { rating: avgRating } });
+    const cat = createdCategories.find(c => c.id === product.categoryId);
+    await es.update({
+      index: 'products',
+      id: product.id,
+      doc: { rating: avgRating },
+    }).catch(() => {});
+  }
+  console.log('Synced avg ratings to products');
 
   console.log('\nAll done. Test credentials:');
   console.log('  Customer: alex@test.com / password123');

@@ -38,7 +38,11 @@ router.get('/', async (req, res) => {
 
     const where = {};
     if (category) where.category = { slug: category };
-    if (minPrice || maxPrice) where.price = { gte: minPrice ? parseFloat(minPrice) : undefined, lte: maxPrice ? parseFloat(maxPrice) : undefined };
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) where.price.gte = parseFloat(minPrice);
+      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+    }
     if (minRating) where.rating = { gte: parseFloat(minRating) };
 
     const cacheKey = `products:list:${category || 'all'}:${page}:${limit}:${minPrice||''}:${maxPrice||''}:${minRating||''}`;

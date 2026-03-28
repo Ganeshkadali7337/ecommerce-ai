@@ -95,6 +95,7 @@ export default function Products() {
             <option value="">Any</option>
             {[4, 3, 2, 1].map(n => <option key={n} value={n}>{n}+ stars</option>)}
           </select>
+
         </aside>
         <div>
           <div style={{ color: '#616161', fontSize: '13px', marginBottom: '16px' }}>
