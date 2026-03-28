@@ -2,6 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../api/client';
 
+async function downloadInvoice(orderId) {
+  const res = await api.get(`/api/orders/${orderId}/invoice`, { responseType: 'blob' });
+  const url = URL.createObjectURL(res.data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `invoice-${orderId}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const statusColors = { pending: '#9e9e9e', paid: '#000', shipped: '#000', cancelled: '#9e9e9e' };
 
 const s = {
@@ -52,10 +62,10 @@ export function OrderDetail() {
           <div style={{ ...s.value, color: statusColors[order.status] || '#000', fontWeight: 600, textTransform: 'uppercase' }}>{order.status}</div>
           <div style={s.label}>Date</div>
           <div style={s.value}>{new Date(order.createdAt).toLocaleDateString()}</div>
-          {order.invoiceUrl && (
-            <a href={order.invoiceUrl} target="_blank" rel="noreferrer" style={s.invoiceLink}>
+          {order.status === 'paid' && (
+            <button onClick={() => downloadInvoice(order.id)} style={{ ...s.invoiceLink, cursor: 'pointer', background: '#fff' }}>
               Download Invoice
-            </a>
+            </button>
           )}
         </aside>
       </div>

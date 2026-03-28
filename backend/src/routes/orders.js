@@ -202,7 +202,9 @@ router.post('/:id/confirm', auth, async (req, res) => {
 
     await redis.del(`cart:${req.user.id}`);
 
-    const invoiceUrl = await generateInvoice(order);
+    // Generate invoice — non-blocking so order still completes if storage fails
+    let invoiceUrl = null;
+    try { invoiceUrl = await generateInvoice(order); } catch (_) {}
 
     const updated = await prisma.order.update({
       where: { id: order.id },
@@ -215,6 +217,43 @@ router.post('/:id/confirm', auth, async (req, res) => {
     });
 
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/:id/invoice', auth, async (req, res) => {
+  try {
+    const order = await prisma.order.findFirst({
+      where: { id: req.params.id, userId: req.user.id },
+      include: { items: { include: { product: true } }, user: true },
+    });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 40 });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="invoice-${order.id}.pdf"`);
+    doc.pipe(res);
+
+    doc.fontSize(20).text('SHOPAI', { align: 'left' });
+    doc.fontSize(10).text('Invoice', { align: 'left' });
+    doc.moveDown();
+    doc.text(`Order ID: ${order.id}`);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`);
+    doc.text(`Customer: ${order.user?.name || ''}`);
+    doc.moveDown();
+    doc.fontSize(12).text('Items', { underline: true });
+    doc.moveDown(0.5);
+    for (const item of order.items) {
+      doc.fontSize(10).text(
+        `${item.product?.name || item.productId}  x${item.quantity}  $${(item.price * item.quantity).toFixed(2)}`
+      );
+    }
+    doc.moveDown();
+    doc.fontSize(12).text(`Total: $${order.total.toFixed(2)}`, { align: 'right' });
+    doc.end();
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
