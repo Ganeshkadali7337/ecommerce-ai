@@ -4,6 +4,8 @@ import Layout from './components/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Products from './pages/Products';
+import ProductDetail from './pages/ProductDetail';
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
             <Route index element={<Home />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="products" element={<Products />} />
+            <Route path="products/:id" element={<ProductDetail />} />
           </Route>
         </Routes>
       </BrowserRouter>
