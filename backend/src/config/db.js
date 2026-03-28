@@ -16,7 +16,10 @@ const redis = new (require('ioredis'))(process.env.REDIS_URL);
 redis.on('connect', () => console.log('Redis connected'));
 redis.on('error', (err) => console.error('Redis error:', err));
 
-const esClient = new ESClient({ node: process.env.ELASTICSEARCH_URL });
+const esClient = new ESClient({
+  node: process.env.ELASTICSEARCH_URL,
+  headers: { accept: 'application/json', 'content-type': 'application/json' },
+});
 
 const qdrantClient = new QdrantClient({ url: process.env.QDRANT_URL, apiKey: process.env.QDRANT_API_KEY });
 
