@@ -183,7 +183,7 @@ async function seed() {
   console.log('Indexed products in Elasticsearch');
 
   try {
-    const qdrant = new QdrantClient({ url: process.env.QDRANT_URL });
+    const qdrant = new QdrantClient({ url: process.env.QDRANT_URL, apiKey: process.env.QDRANT_API_KEY });
     const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const embModel = genai.getGenerativeModel({ model: 'gemini-embedding-001' });
 
