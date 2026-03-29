@@ -25,9 +25,11 @@ const s = {
   },
   body: { padding: '12px' },
   category: { fontSize: '11px', color: '#616161', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  name: { fontWeight: 600, marginBottom: '6px', fontSize: '14px' },
+  name: { fontWeight: 600, fontSize: '14px', flex: 1 },
+  row: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginTop: '6px' },
+  right: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 },
   price: { fontWeight: 700, fontSize: '15px' },
-  rating: { fontSize: '12px', color: '#616161', marginTop: '4px' },
+  rating: { fontSize: '12px', color: '#616161', marginTop: '2px', whiteSpace: 'nowrap' },
 };
 
 export default function ProductCard({ product }) {
@@ -40,13 +42,17 @@ export default function ProductCard({ product }) {
         }
         <div style={s.body}>
           <div style={s.category}>{product.category?.name}</div>
-          <div style={s.name}>{product.name}</div>
-          <div style={s.price}>${product.price.toFixed(2)}</div>
-          {product.rating > 0 && (
-            <div style={s.rating}>
-              {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))} {product.rating.toFixed(1)}
+          <div style={s.row}>
+            <div style={s.name}>{product.name}</div>
+            <div style={s.right}>
+              <div style={s.price}>${product.price.toFixed(2)}</div>
+              {product.rating > 0 && (
+                <div style={s.rating}>
+                  {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))} {product.rating.toFixed(1)}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </Link>

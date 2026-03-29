@@ -82,7 +82,7 @@ export default function Search() {
           ) : (
             <>
               <div style={{ color: '#616161', fontSize: '13px', marginBottom: '16px' }}>{results.length} results</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+              <div className="product-grid">
                 {results.map(p => <ProductCard key={p.id} product={p} />)}
               </div>
             </>

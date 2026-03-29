@@ -102,6 +102,13 @@ h3 { font-size: 16px; font-weight: 600; }
   gap: 32px;
 }
 
+/* ── Product grid (reused across pages) ── */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
 .category-filter-mobile {
   display: none;
   margin-bottom: 16px;
@@ -207,6 +214,12 @@ h3 { font-size: 16px; font-weight: 600; }
 
   .category-filter-mobile {
     display: block;
+  }
+
+  /* 2 products per row on mobile */
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   /* Product detail */

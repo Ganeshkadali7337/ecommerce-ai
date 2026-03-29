@@ -1,10 +1,12 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import SearchBar from './SearchBar';
 import ChatWidget from './ChatWidget';
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const { cartCount } = useCart();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -21,7 +23,29 @@ export default function Layout() {
         </div>
         <nav className="header-nav">
           <Link to="/products">Products</Link>
-          <Link to="/cart">Cart</Link>
+          <Link to="/cart" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            Cart
+            {cartCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-10px',
+                background: '#000',
+                color: '#fff',
+                borderRadius: '50%',
+                width: '18px',
+                height: '18px',
+                fontSize: '11px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1,
+              }}>
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
+          </Link>
           {user ? (
             <>
               <Link to="/orders">Orders</Link>

@@ -10,7 +10,7 @@ const s = {
   sidebarTitle: { fontWeight: 600, marginBottom: '12px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' },
   categoryItem: { padding: '6px 0', fontSize: '14px', cursor: 'pointer', borderBottom: '1px solid #e0e0e0' },
   active: { fontWeight: 700 },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' },
+  grid: {},
   pagination: { display: 'flex', gap: '8px', marginTop: '32px', alignItems: 'center' },
   pageBtn: { border: '1px solid #000', background: '#fff', padding: '6px 12px' },
   pageBtnActive: { border: '1px solid #000', background: '#000', color: '#fff', padding: '6px 12px' },
@@ -104,7 +104,7 @@ export default function Products() {
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#616161' }}><Spinner /> Loading...</div>
           ) : (
-            <div style={s.grid}>
+            <div className="product-grid">
               {data.products.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
           )}
