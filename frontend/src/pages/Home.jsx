@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
+import ProductCard from '../components/ProductCard';
 
 export default function Home() {
   const [categories, setCategories] = useState([]);
@@ -38,20 +39,8 @@ export default function Home() {
 
       <div>
         <h2 style={{ marginBottom: '16px' }}>Latest Products</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
-          {featured.map(p => (
-            <Link key={p.id} to={`/products/${p.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-              <div style={{ border: '1px solid #e0e0e0' }}>
-                <div style={{ background: '#f5f5f5', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9e9e9e', fontSize: '12px' }}>
-                  {p.imageUrl ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : 'No image'}
-                </div>
-                <div style={{ padding: '10px' }}>
-                  <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{p.name}</div>
-                  <div style={{ fontWeight: 700 }}>${p.price.toFixed(2)}</div>
-                </div>
-              </div>
-            </Link>
-          ))}
+        <div className="product-grid">
+          {featured.map(p => <ProductCard key={p.id} product={p} />)}
         </div>
       </div>
     </div>

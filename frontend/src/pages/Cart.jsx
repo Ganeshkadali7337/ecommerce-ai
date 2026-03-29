@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 const s = {
   layout: { display: 'grid', gridTemplateColumns: '1fr 320px', gap: '48px' },
@@ -20,6 +21,7 @@ const s = {
 
 export default function Cart() {
   const { user } = useAuth();
+  const { refreshCart } = useCart();
   const navigate = useNavigate();
   const [cart, setCart] = useState({ items: [], total: 0 });
   const [error, setError] = useState('');
@@ -43,6 +45,7 @@ export default function Cart() {
     try {
       await api.put(`/api/cart/${productId}`, { quantity });
       await fetchCart();
+      refreshCart();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update quantity');
     } finally {
@@ -55,6 +58,7 @@ export default function Cart() {
     try {
       await api.delete(`/api/cart/${productId}`);
       await fetchCart();
+      refreshCart();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to remove item');
     } finally {

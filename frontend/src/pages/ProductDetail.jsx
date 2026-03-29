@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import Reviews from '../components/Reviews';
 import SimilarProducts from '../components/SimilarProducts';
 import AlsoBought from '../components/AlsoBought';
@@ -10,6 +11,7 @@ import Spinner from '../components/Spinner';
 export default function ProductDetail() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { refreshCart } = useCart();
   const [product, setProduct] = useState(null);
   const [qty, setQty] = useState(1);
   const [msg, setMsg] = useState('');
@@ -23,6 +25,7 @@ export default function ProductDetail() {
     setAdding(true);
     try {
       await api.post('/api/cart', { productId: product.id, quantity: qty });
+      refreshCart();
       setMsg('Added to cart');
     } catch (err) {
       setMsg(err.response?.data?.error || 'Failed to add to cart');
