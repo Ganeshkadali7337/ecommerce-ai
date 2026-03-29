@@ -181,7 +181,7 @@ h3 { font-size: 16px; font-weight: 600; }
   }
 
   .main-content {
-    padding: 16px 6px;
+    padding: 16px;
   }
 
   /* Search */
@@ -219,8 +219,7 @@ h3 { font-size: 16px; font-weight: 600; }
   /* 2 products per row on mobile */
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    padding: 0 5px;
+    gap: 8px;
   }
 
   /* Product detail */

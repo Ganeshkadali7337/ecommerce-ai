@@ -23,13 +23,13 @@ const s = {
     color: '#9e9e9e',
     fontSize: '12px',
   },
-  body: { padding: '12px' },
-  category: { fontSize: '11px', color: '#616161', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  name: { fontWeight: 600, fontSize: '14px', flex: 1 },
-  row: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginTop: '6px' },
+  body: { padding: '8px' },
+  category: { fontSize: '10px', color: '#616161', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  name: { fontWeight: 600, fontSize: '12px', flex: 1, minWidth: 0, wordBreak: 'break-word' },
+  row: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '4px', marginTop: '4px' },
   right: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 },
-  price: { fontWeight: 700, fontSize: '15px' },
-  rating: { fontSize: '12px', color: '#616161', marginTop: '2px', whiteSpace: 'nowrap' },
+  price: { fontWeight: 700, fontSize: '13px' },
+  rating: { fontSize: '11px', color: '#616161', marginTop: '2px' },
 };
 
 export default function ProductCard({ product }) {
