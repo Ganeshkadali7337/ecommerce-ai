@@ -2,15 +2,25 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
 import ProductCard from '../components/ProductCard';
+import Spinner from '../components/Spinner';
 
 export default function Home() {
   const [categories, setCategories] = useState([]);
   const [featured, setFeatured] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/api/products/meta/categories').then(r => setCategories(r.data));
-    api.get('/api/products?limit=4').then(r => setFeatured(r.data.products || []));
+    Promise.all([
+      api.get('/api/products/meta/categories').then(r => setCategories(r.data)),
+      api.get('/api/products?limit=4').then(r => setFeatured(r.data.products || [])),
+    ]).finally(() => setLoading(false));
   }, []);
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px', color: '#616161' }}>
+      <Spinner /> Loading...
+    </div>
+  );
 
   return (
     <div>

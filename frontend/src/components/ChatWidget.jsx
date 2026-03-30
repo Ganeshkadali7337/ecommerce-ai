@@ -2,6 +2,28 @@ import { useState, useRef, useEffect } from 'react';
 import api from '../api/client';
 import Spinner from './Spinner';
 
+function renderMessage(text) {
+  const lines = text.split('\n').filter(l => l.trim() !== '');
+  return lines.map((line, i) => {
+    const isBullet = /^(\s*[-•*]|\s*\d+\.)\s+/.test(line);
+    const clean = line.replace(/^(\s*[-•*]|\s*\d+\.)\s+/, '');
+    const parts = clean.split(/(\*\*[^*]+\*\*)/g).map((part, j) =>
+      /^\*\*[^*]+\*\*$/.test(part)
+        ? <strong key={j}>{part.slice(2, -2)}</strong>
+        : part
+    );
+    if (isBullet) {
+      return (
+        <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '3px' }}>
+          <span style={{ flexShrink: 0 }}>•</span>
+          <span>{parts}</span>
+        </div>
+      );
+    }
+    return <div key={i} style={{ marginBottom: '3px' }}>{parts}</div>;
+  });
+}
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -48,7 +70,7 @@ export default function ChatWidget() {
                   fontSize: '13px',
                   lineHeight: '1.5',
                 }}>
-                  {m.text}
+                  {m.role === 'ai' ? renderMessage(m.text) : m.text}
                 </div>
                 {m.cost !== undefined && (
                   <div style={{ fontSize: '10px', color: '#9e9e9e', marginTop: '2px' }}>
