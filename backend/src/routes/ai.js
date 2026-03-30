@@ -66,16 +66,17 @@ Analyze the customer message and respond with JSON only. No explanation, no mark
 Rules:
 - "product_search" → user is asking about products, looking for recommendations, asking about price/style/category
 - "general_chat" → greetings, general questions, unrelated topics, thank you, etc.
+- Extract maxPrice and minPrice if the user mentions a price constraint (numbers only, no $ sign)
 
-Response format: {"intent": "product_search" | "general_chat", "query": "extracted search query or null"}
+Response format: {"intent": "product_search" | "general_chat", "query": "extracted search query or null", "maxPrice": null | number, "minPrice": null | number}
 
 Examples:
-"hi" → {"intent": "general_chat", "query": null}
-"I need a warm hoodie under $80" → {"intent": "product_search", "query": "warm hoodie under 80"}
-"show me sneakers" → {"intent": "product_search", "query": "sneakers"}
-"what jeans do you have?" → {"intent": "product_search", "query": "jeans"}
-"thanks!" → {"intent": "general_chat", "query": null}
-"do you have anything for winter?" → {"intent": "product_search", "query": "winter clothing warm"}
+"hi" → {"intent": "general_chat", "query": null, "maxPrice": null, "minPrice": null}
+"I need a warm hoodie under $80" → {"intent": "product_search", "query": "hoodie", "maxPrice": 80, "minPrice": null}
+"show me sneakers" → {"intent": "product_search", "query": "sneakers", "maxPrice": null, "minPrice": null}
+"jeans between $40 and $100" → {"intent": "product_search", "query": "jeans", "maxPrice": 100, "minPrice": 40}
+"thanks!" → {"intent": "general_chat", "query": null, "maxPrice": null, "minPrice": null}
+"do you have anything for winter?" → {"intent": "product_search", "query": "winter clothing warm", "maxPrice": null, "minPrice": null}
 
 Customer message: "${message}"`;
 
@@ -86,11 +87,15 @@ Customer message: "${message}"`;
 
     let intent = 'general_chat';
     let searchQuery = null;
+    let maxPrice = null;
+    let minPrice = null;
     try {
       const raw = intentResult.response.text().replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(raw);
       intent = parsed.intent || 'general_chat';
       searchQuery = parsed.query || null;
+      maxPrice = parsed.maxPrice || null;
+      minPrice = parsed.minPrice || null;
     } catch {}
 
     // Step 2 — If product search, query Elasticsearch
@@ -98,18 +103,33 @@ Customer message: "${message}"`;
     let productsText = '';
     if (intent === 'product_search' && searchQuery) {
       try {
-        const result = await esClient.search({
-          index: 'products',
-          body: {
-            query: {
+        const esQuery = {
+          bool: {
+            must: {
               multi_match: {
                 query: searchQuery,
                 fields: ['name^3', 'description', 'category'],
                 fuzziness: 'AUTO',
               },
             },
-            size: 5,
           },
+        };
+
+        // Add price range filter if specified
+        if (maxPrice !== null || minPrice !== null) {
+          esQuery.bool.filter = {
+            range: {
+              price: {
+                ...(maxPrice !== null && { lte: maxPrice }),
+                ...(minPrice !== null && { gte: minPrice }),
+              },
+            },
+          };
+        }
+
+        const result = await esClient.search({
+          index: 'products',
+          body: { query: esQuery, size: 10 },
         });
         productList = result.hits.hits.map(h => ({
           name: h._source.name,
