@@ -4,6 +4,7 @@ const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
 const { HumanMessage, AIMessage, SystemMessage } = require('@langchain/core/messages');
 const { esClient, connectMongo } = require('../config/db');
 const AiLog = require('../models/AiLog');
+const ChatHistory = require('../models/ChatHistory');
 
 const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const chatModel = genai.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -13,9 +14,6 @@ const lcChatModel = new ChatGoogleGenerativeAI({
   model: 'gemini-2.5-flash',
   apiKey: process.env.GEMINI_API_KEY,
 });
-
-// In-memory store: userId → array of HumanMessage/AIMessage
-const memoryStore = new Map();
 
 /**
  * @swagger
@@ -51,9 +49,12 @@ router.post('/chat', async (req, res) => {
       }
     } catch {}
 
-    // Get or create history array for this user
-    if (!memoryStore.has(userId)) memoryStore.set(userId, []);
-    const history = memoryStore.get(userId);
+    // Load history from MongoDB
+    let historyDoc = await ChatHistory.findOne({ userId });
+    if (!historyDoc) historyDoc = new ChatHistory({ userId, messages: [] });
+    const history = historyDoc.messages.map(m =>
+      m.role === 'human' ? new HumanMessage(m.content) : new AIMessage(m.content)
+    );
 
     let totalInputTokens = 0;
     let totalOutputTokens = 0;
@@ -151,9 +152,13 @@ ${productsText ? `\nMatching products:\n${productsText}` : '\nNo products found 
     const lcResult = await lcChatModel.invoke(messages);
     const reply = lcResult.content;
 
-    // Step 6 — Save this turn to history
-    history.push(new HumanMessage(message));
-    history.push(new AIMessage(reply));
+    // Step 6 — Save this turn to MongoDB
+    historyDoc.messages.push({ role: 'human', content: message });
+    historyDoc.messages.push({ role: 'ai', content: reply });
+    // Keep last 20 messages (10 turns) to avoid unbounded growth
+    if (historyDoc.messages.length > 20) historyDoc.messages = historyDoc.messages.slice(-20);
+    historyDoc.updatedAt = new Date();
+    await historyDoc.save();
 
     totalInputTokens += lcResult.usageMetadata?.inputTokenCount || 0;
     totalOutputTokens += lcResult.usageMetadata?.outputTokenCount || 0;
