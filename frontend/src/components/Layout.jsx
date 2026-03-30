@@ -17,6 +17,7 @@ export default function Layout() {
   return (
     <>
       <header className="header">
+        <div className="header-inner">
         <Link to="/" className="header-logo">SHOPAI</Link>
         <div className="header-search">
           <SearchBar />
@@ -60,6 +61,7 @@ export default function Layout() {
             <Link to="/login">Login</Link>
           )}
         </nav>
+        </div>
       </header>
 
       <main className="main-content">
